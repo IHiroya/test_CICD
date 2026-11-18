@@ -1,0 +1,10 @@
+# colcon の生成物
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/

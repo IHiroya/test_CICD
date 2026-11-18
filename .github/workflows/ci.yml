@@ -1,0 +1,79 @@
+# ROS 2 CI ワークフロー: ビルド + 単体テスト
+#
+# 流れ:
+#   1. ros:jazzy コンテナを起動 (ROS 2 がインストール済みの公式イメージ)
+#   2. ソースをチェックアウト
+#   3. rosdep で package.xml に書かれた依存パッケージをインストール
+#   4. colcon build でビルド
+#   5. colcon test で単体テスト (GTest / pytest) を実行
+#   6. テスト結果を表示し、失敗していればジョブを失敗させる
+#   7. テスト結果ファイルをアーティファクトとして保存
+
+name: ROS 2 CI
+
+# いつ実行するか
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # GitHub の画面から手動実行できるようにする
+
+# 同じブランチで新しい push があったら、古い実行はキャンセルする
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:jazzy  # ローカル環境 (Ubuntu 24.04 + Jazzy) と合わせる
+
+    # 以降の run ステップは bash で実行する (setup.bash を source するため)
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ros_ws/src/repo  # colcon ワークスペースの src 配下に置く
+
+      - name: Install dependencies (rosdep)
+        working-directory: ros_ws
+        run: |
+          apt-get update
+          rosdep update
+          rosdep install --from-paths src --ignore-src -y --rosdistro jazzy
+
+      - name: Build (colcon build)
+        working-directory: ros_ws
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --event-handlers console_cohesion+
+
+      - name: Test (colcon test)
+        working-directory: ros_ws
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          colcon test --event-handlers console_cohesion+
+
+      # colcon test はテストが失敗しても終了コード 0 を返すため、
+      # test-result で結果を集計し、失敗があればここでジョブを落とす
+      - name: Show test results
+        working-directory: ros_ws
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon test-result --all --verbose
+
+      - name: Upload test results
+        if: always()  # テストが失敗しても結果は保存する
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            ros_ws/build/*/test_results/
+            ros_ws/build/*/pytest.xml
