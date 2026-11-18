@@ -12,7 +12,8 @@ def test_value_below_range_is_clamped_to_lower():
 
 
 def test_value_above_range_is_clamped_to_upper():
-    assert clamp(5.0, -1.0, 1.0) == 1.0
+    # CI失敗確認用: わざと誤った期待値 (正しくは 1.0)
+    assert clamp(5.0, -1.0, 1.0) == 5.0
 
 
 def test_boundary_values():
