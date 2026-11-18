@@ -37,6 +37,11 @@ std::size_t MovingAverage::size() const
   return values_.size();
 }
 
+bool MovingAverage::is_full() const
+{
+  return values_.size() == window_size_;
+}
+
 void MovingAverage::reset()
 {
   values_.clear();

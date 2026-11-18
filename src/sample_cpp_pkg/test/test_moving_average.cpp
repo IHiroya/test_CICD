@@ -39,6 +39,20 @@ TEST(MovingAverageTest, ResetClearsValues)
   EXPECT_DOUBLE_EQ(ma.add(4.0), 4.0);
 }
 
+TEST(MovingAverageTest, IsFullAfterWindowSizeValues)
+{
+  MovingAverage ma(2);
+  EXPECT_FALSE(ma.is_full());
+  ma.add(1.0);
+  EXPECT_FALSE(ma.is_full());
+  ma.add(2.0);
+  EXPECT_TRUE(ma.is_full());
+  ma.add(3.0);
+  EXPECT_TRUE(ma.is_full());
+  ma.reset();
+  EXPECT_FALSE(ma.is_full());
+}
+
 TEST(MovingAverageTest, ZeroWindowThrows)
 {
   EXPECT_THROW(MovingAverage(0), std::invalid_argument);
