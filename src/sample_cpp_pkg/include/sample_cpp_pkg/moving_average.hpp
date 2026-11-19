@@ -21,6 +21,10 @@ public:
   double average() const;
 
   std::size_t size() const;
+
+  // ウィンドウが値で埋まっているか
+  bool is_full() const;
+
   void reset();
 
 private:
