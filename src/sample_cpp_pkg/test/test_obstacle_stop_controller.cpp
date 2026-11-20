@@ -25,6 +25,7 @@ public:
   MOCK_METHOD(void, set_velocity, (double velocity), (override));
 };
 
+// 各テストで共通に使うモックと制御クラス(停止距離 0.5m)を用意する
 class ObstacleStopControllerTest : public ::testing::Test
 {
 protected:
@@ -33,6 +34,7 @@ protected:
   ObstacleStopController controller_{sensor_, motor_, 0.5};
 };
 
+// 障害物が停止距離より遠いとき、目標速度でモータに指令し、停止しないこと
 TEST_F(ObstacleStopControllerTest, DrivesWhenObstacleIsFar)
 {
   EXPECT_CALL(sensor_, read_distance()).WillOnce(Return(2.0));
@@ -41,6 +43,7 @@ TEST_F(ObstacleStopControllerTest, DrivesWhenObstacleIsFar)
   EXPECT_FALSE(controller_.update(1.0));
 }
 
+// 障害物が停止距離より近いとき、モータに速度 0(停止)を指令すること
 TEST_F(ObstacleStopControllerTest, StopsWhenObstacleIsNear)
 {
   EXPECT_CALL(sensor_, read_distance()).WillOnce(Return(0.3));
@@ -49,6 +52,7 @@ TEST_F(ObstacleStopControllerTest, StopsWhenObstacleIsNear)
   EXPECT_TRUE(controller_.update(1.0));
 }
 
+// 障害物が停止距離ちょうどのときも停止すること(境界値)
 TEST_F(ObstacleStopControllerTest, StopsAtExactlyStopDistance)
 {
   EXPECT_CALL(sensor_, read_distance()).WillOnce(Return(0.5));
@@ -57,6 +61,7 @@ TEST_F(ObstacleStopControllerTest, StopsAtExactlyStopDistance)
   EXPECT_TRUE(controller_.update(1.0));
 }
 
+// センサの読み取りに失敗したとき、安全のため停止すること
 TEST_F(ObstacleStopControllerTest, StopsWhenSensorFails)
 {
   EXPECT_CALL(sensor_, read_distance()).WillOnce(Return(std::nullopt));
@@ -65,6 +70,7 @@ TEST_F(ObstacleStopControllerTest, StopsWhenSensorFails)
   EXPECT_TRUE(controller_.update(1.0));
 }
 
+// 障害物で停止した後、障害物がなくなれば走行を再開すること
 TEST_F(ObstacleStopControllerTest, ResumesAfterObstacleIsRemoved)
 {
   // 1回目は近い、2回目は遠い値を返す
