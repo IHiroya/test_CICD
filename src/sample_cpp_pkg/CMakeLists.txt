@@ -22,6 +22,12 @@ target_include_directories(low_pass_filter PUBLIC
   $<INSTALL_INTERFACE:include>)
 target_compile_features(low_pass_filter PUBLIC cxx_std_17)
 
+add_library(obstacle_stop_controller src/obstacle_stop_controller.cpp)
+target_include_directories(obstacle_stop_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(obstacle_stop_controller PUBLIC cxx_std_17)
+
 # ROSノード本体
 add_executable(moving_average_node src/moving_average_node.cpp)
 target_link_libraries(moving_average_node
@@ -29,7 +35,7 @@ target_link_libraries(moving_average_node
   rclcpp::rclcpp
   ${std_msgs_TARGETS})
 
-install(TARGETS moving_average low_pass_filter moving_average_node
+install(TARGETS moving_average low_pass_filter obstacle_stop_controller moving_average_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
@@ -43,6 +49,11 @@ if(BUILD_TESTING)
 
   ament_add_gtest(test_low_pass_filter test/test_low_pass_filter.cpp)
   target_link_libraries(test_low_pass_filter low_pass_filter)
+
+  # モックを使うテストは ament_add_gmock で登録する(GTest + GMock がリンクされる)
+  find_package(ament_cmake_gmock REQUIRED)
+  ament_add_gmock(test_obstacle_stop_controller test/test_obstacle_stop_controller.cpp)
+  target_link_libraries(test_obstacle_stop_controller obstacle_stop_controller)
 endif()
 
 ament_package()
